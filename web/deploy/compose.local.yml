@@ -1,0 +1,59 @@
+# NFS Underground in the browser on ANY machine with Docker (macOS, Windows, Linux desktop): the same
+# server image and Caddy as compose.yml, but with a published port instead of the host network (Caddy shares
+# the server's network namespace, as both share the VPS's there), and HTTPS from Caddy's own local CA ("tls internal")
+# instead of Let's Encrypt, so it needs no public DNS name.
+#
+# The page needs a secure context (SharedArrayBuffer): https://localhost works; another machine on the LAN
+# must trust Caddy's root CA once (docker compose -f compose.local.yml cp caddy:/data/caddy/pki/authorities/local/root.crt .)
+#
+# In .env next to this file (or the environment):
+#   NFSU2_DATA=/path/to/NFS Underground   the folder with SPEED.EXE (default ./game), read-only
+#   NFSU2_MODULE=../../out/web            nfsu2.wasm + nfsu2.json from web/build.sh (default ./module)
+#   NFSU2_HOST=localhost                  the name you open (default localhost)
+#   NFSU2_HTTPS_PORT=8443                 the port on this machine (default 8443)
+#
+#   docker compose -f compose.local.yml up -d --build      then open https://localhost:8443/
+#   A new module (web/build.sh): docker compose -f compose.local.yml up -d --force-recreate
+#   (not "restart server": Caddy lives in the server's network namespace and would keep the old one)
+name: nfsu1-web-local
+services:
+  caddy:
+    image: caddy:2.11-alpine
+    restart: unless-stopped
+    # the server's own network namespace: its HTTP port listens on 127.0.0.1 only (for the proxy in front)
+    network_mode: service:server
+    configs: [{ source: caddyfile, target: /etc/caddy/Caddyfile }]
+    volumes: [caddy-data:/data, caddy-config:/config]
+    depends_on: [server]
+  server:
+    image: ${NFSU2_IMAGE:-nfsu1-web-rs:local}
+    build: { context: ../.., dockerfile: web/server-rs/Dockerfile }
+    restart: unless-stopped
+    command: ["--behind-proxy"]
+    ports: ["${NFSU2_HTTPS_PORT:-8443}:443"]     # Caddy's, which lives in this service's network
+    environment:
+      NFSU2_HOST: ${NFSU2_HOST:-localhost}
+      NFSU2_HTTP_PORT: "8080"
+      NFSU2_REAL_IP_HEADER: x-forwarded-for
+    volumes:
+      - ${NFSU2_DATA:-./game}:/game:ro
+      - ${NFSU2_MODULE:-./module}:/module:ro
+      - state:/state
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+configs:
+  caddyfile:
+    content: |
+      {
+      	admin off
+      }
+      ${NFSU2_HOST:-localhost} {
+      	tls internal
+      	reverse_proxy 127.0.0.1:8080
+      	header -Server
+      }
+volumes:
+  state:
+  caddy-data:
+  caddy-config:

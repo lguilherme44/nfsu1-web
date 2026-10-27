@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0d0d">
+<title>NFS Underground Web</title>
+<meta name="description" content="Need for Speed: Underground (2003) running in the browser, statically recompiled to WebAssembly, with WebGPU graphics and Web Audio. Bring your own copy of the game. Fan project, not affiliated with Electronic Arts.">
+<meta name="keywords" content="Need for Speed Underground, NFSU1, static recompilation, WebAssembly, WebGPU">
+<meta name="application-name" content="NFS Underground Web">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NFS Underground Web">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="NFS Underground Web">
+<meta property="og:description" content="Need for Speed: Underground (2003) running in the browser, statically recompiled to WebAssembly, with WebGPU graphics and Web Audio. Bring your own copy of the game. Fan project, not affiliated with Electronic Arts.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NFS Underground Web">
+<meta name="twitter:description" content="Need for Speed: Underground (2003) running in the browser, statically recompiled to WebAssembly, with WebGPU graphics and Web Audio. Bring your own copy of the game. Fan project, not affiliated with Electronic Arts.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23171717'/%3E%3Crect x='5' y='5' width='22' height='22' rx='6' fill='%23404038' stroke='%23c8f088' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="stylesheet" href="/main.css">
+<script type="module" src="/main.js"></script>
+</head>
+<body data-phase="boot">
+
+<main class="app" id="app">
+  <header class="top">
+    <div class="top-row">
+      <h1>NFS Underground Web</h1>
+      <div class="top-end">
+        <p class="hint">Fan project. Not affiliated with or endorsed by Electronic Arts.</p>
+        <a class="btn" href="https://github.com/lguilherme44/nfsu1-web" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+    <div class="bar" id="progress" role="progressbar" aria-label="Game loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="bar-fill" id="progress-fill"></div>
+    </div>
+  </header>
+
+  <div class="side">
+    <section class="panel hero" aria-label="Play">
+      <p class="status" id="status" role="status">Loading</p>
+      <p class="status-sub" id="status-sub">Loading the game.</p>
+      <div class="row">
+        <button type="button" class="play" id="play" disabled>Play <kbd class="key-only">Enter</kbd></button>
+        <button type="button" class="btn" id="retry" hidden>Retry</button>
+        <button type="button" class="btn" id="reload" hidden>Reload</button>
+        <button type="button" class="text-btn" id="log-btn" hidden>Download log</button>
+      </div>
+      <p class="msg" id="report" hidden>Help get it fixed: download the log and attach it to <a href="https://github.com/lguilherme44/nfsu1-web/issues" target="_blank" rel="noopener noreferrer">an issue on GitHub</a>, with what you were doing when it happened.</p>
+      <p class="msg" id="newer" aria-live="polite" hidden></p>
+      <ul class="problems" id="problems" aria-live="polite"></ul>
+      <p class="msg warn" id="override" hidden></p>
+    </section>
+
+    <section class="panel" id="controls" aria-labelledby="controls-title">
+      <h2 id="controls-title">Controls</h2>
+      <div id="keys">
+        <div class="tabs" role="tablist" aria-label="Controls">
+          <button type="button" class="tab" role="tab" data-tab="keys"><span class="key-only">Keyboard</span><span class="touch-only">Touch</span></button>
+          <button type="button" class="tab" role="tab" data-tab="pad">Controller</button>
+          <button type="button" class="tab" role="tab" data-tab="site">Site</button>
+        </div>
+        <div class="tab-panel" role="tabpanel" data-tab="keys">
+          <p class="hint touch-only">Tap to use the game's menus. While you drive, touch controls show on the game: the button in the top right corner switches the steering between buttons, a thumb stick and tilt. A controller works too.</p>
+          <!-- the level horizon's switch: controls.ts -->
+          <div class="set touch-only" data-level>
+            <label class="set-label">Level horizon</label>
+            <p class="set-help">With tilt steering, the view turns against the phone, so the road's horizon stays level.</p>
+            <div class="set-control"><span class="val" aria-hidden="true"></span><input type="checkbox" class="switch" role="switch"></div>
+          </div>
+          <dl class="keys key-only">
+            <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Throttle, brake and reverse</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Steer (or W S A D)</dd></div>
+            <div><dt><kbd>Alt</kbd></dt><dd>Nitrous</dd></div>
+            <div><dt><kbd>Space</kbd></dt><dd>Handbrake</dd></div>
+            <div><dt><kbd>Shift</kbd> <kbd>Ctrl</kbd></dt><dd>Shift up, shift down (manual)</dd></div>
+            <div><dt><kbd>C</kbd> <kbd>B</kbd></dt><dd>Change camera, look back</dd></div>
+            <div><dt><kbd>R</kbd></dt><dd>Respawn</dd></div>
+            <div><dt><kbd>H</kbd> <kbd>J</kbd></dt><dd>Hydraulics (hold, then the arrows)</dd></div>
+            <div><dt><kbd>N</kbd></dt><dd>Horn (with other players)</dd></div>
+            <div><dt><kbd>Enter</kbd></dt><dd>Start an event, take an outrun</dd></div>
+            <div><dt><kbd>M</kbd> <kbd>Tab</kbd></dt><dd>Map, messages</dd></div>
+            <div><dt><kbd>Esc</kbd> <kbd>P</kbd></dt><dd>Pause</dd></div>
+          </dl>
+          <p class="hint key-only">In menus: arrow keys and Enter, Esc goes back. Change keys in the game's Options, Controls.</p>
+        </div>
+        <!-- the controller's drawing: controls.ts -->
+        <div class="tab-panel" role="tabpanel" data-tab="pad" hidden></div>
+        <div class="tab-panel" role="tabpanel" data-tab="site" hidden>
+          <dl class="keys">
+            <div class="key-only"><dt><kbd>F9</kbd></dt><dd>Menu: full screen, controls, log, quit</dd></div>
+            <div class="touch-only"><dt><kbd>☰</kbd></dt><dd>Menu: full screen, controls, log, quit</dd></div>
+            <div><dt><kbd>Home</kbd> or both sticks pressed in</dt><dd>The menu, on a controller</dd></div>
+            <div class="key-only"><dt><kbd>F8</kbd></dt><dd>Frame-rate counter</dd></div>
+            <div class="key-only"><dt><kbd>F12</kbd></dt><dd>Screenshot, shown in Saves</dd></div>
+            <div class="key-only"><dt>Hold <kbd>Esc</kbd></dt><dd>Leave full screen</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="changes" aria-labelledby="changes-title">
+      <h2 id="changes-title">Changes from the original</h2>
+      <div class="changes">
+        <p>The PC game's own code, recompiled to run in Chrome and Firefox with WebGPU graphics and Web Audio sound. It runs at up to 120 fps in widescreen at your screen's resolution, with the original look at its highest settings.</p>
+        <p>Drive with friends in free roam and race them in Online mode on this server, with no account, and honk at them with eight horns. Play on a keyboard, an Xbox or PlayStation controller, a steering wheel or a phone's touch controls, with your saves in this browser or in the cloud.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="content">
+    <section class="panel" id="saves" aria-labelledby="saves-title">
+      <div class="panel-head">
+        <h2 id="saves-title">Saves</h2>
+        <div class="row">
+          <button type="button" class="btn" id="export">Download backup</button>
+          <label class="btn file-btn">Restore<input type="file" id="import"></label>
+        </div>
+      </div>
+      <p class="msg" id="saves-msg" role="status"></p>
+      <ul class="profiles" id="profiles" aria-label="Profiles in this browser"></ul>
+      <p class="hint">To save while playing: <span class="key-only"><kbd>Esc</kbd> or </span><kbd>Start</kbd> &gt; Garage &gt; Save</p>
+      <div class="panel-head sub">
+        <h3>Screenshots</h3>
+        <p class="hint key-only">Screenshot with <kbd>F12</kbd></p>
+      </div>
+      <p class="hint" id="shots-info" hidden>None yet.</p>
+      <ul class="shots" id="shots" aria-label="Screenshots in this browser"></ul>
+      <div class="vault" id="vault" hidden>
+        <div class="panel-head sub">
+          <h3>Cloud saves</h3>
+          <button type="button" class="btn" id="vault-make">Enable cloud saving</button>
+          <p class="hint" id="vault-when" role="status" hidden></p>
+        </div>
+        <form class="vault-row" id="vault-form">
+          <div class="keybox masked" id="vault-box">
+            <div class="keyfield">
+              <input type="text" id="vault-input" placeholder="Enter your keyphrase" spellcheck="false" autocomplete="off" autocapitalize="none" aria-label="Keyphrase">
+              <span class="keymask" id="vault-mask" aria-hidden="true"></span>
+            </div>
+            <button type="button" class="icon-btn" id="vault-file" aria-label="Download keyphrase" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+            <button type="button" class="icon-btn eye" id="vault-eye" aria-label="Show keyphrase" aria-pressed="false"><svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1Q11.3 5 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.3-.5 4.6-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button>
+          </div>
+          <button type="submit" class="btn" id="vault-load">Load</button>
+        </form>
+        <p class="hint" id="vault-about">Make a keyphrase, or enter yours to load your saves.</p>
+        <p class="hint warn" id="vault-status" role="status"></p>
+        <div class="row" id="vault-conflict" hidden>
+          <button type="button" class="btn" id="vault-mine">Keep this browser's</button>
+          <button type="button" class="btn" id="vault-theirs">Use the cloud's</button>
+        </div>
+        <div class="row" id="vault-on" hidden>
+          <button type="button" class="text-btn" id="vault-sync">Sync now</button>
+          <button type="button" class="text-btn" id="vault-earlier" hidden>Go back</button>
+          <button type="button" class="text-btn" id="vault-stop">Stop syncing</button>
+          <button type="button" class="text-btn" id="vault-delete">Delete from cloud</button>
+        </div>
+        <p class="msg" id="vault-msg" role="status"></p>
+      </div>
+      <p class="msg warn" id="storage-note" hidden></p>
+    </section>
+
+    <section class="panel" id="online" aria-labelledby="online-title">
+      <h2 id="online-title">Online</h2>
+      <p class="hint" id="online-note" hidden></p>
+      <div id="online-body"></div>
+    </section>
+
+    <section class="panel" id="settings" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <p class="hint" id="settings-note">Saved in this browser. Changes apply the next time you press Play.</p>
+      <div id="settings-body"></div>
+      <details class="raw" id="settings-raw">
+        <summary>Edit settings.ini as text</summary>
+        <textarea id="settings-text" spellcheck="false" rows="20" wrap="off" aria-label="settings.ini"></textarea>
+        <div class="row">
+          <button type="button" class="btn" id="settings-text-save">Save file</button>
+          <span class="hint" id="settings-text-msg" role="status"></span>
+        </div>
+      </details>
+    </section>
+
+    <section class="panel" id="game-data" aria-labelledby="game-data-title">
+      <h2 id="game-data-title">Game data on this PC</h2>
+      <p class="hint" id="cache-info">Counting…</p>
+      <div class="bar" id="data-bar" role="progressbar" aria-label="Game data preload" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+        <div class="bar-fill"></div>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="fetch-all" hidden>Preload the game data</button>
+        <button type="button" class="btn" id="clear-cache">Delete the game data on this PC</button>
+      </div>
+      <p class="msg" id="data-msg" role="status"></p>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <p class="hint">Built on <a href="https://github.com/th0mk/nfsu2-web" target="_blank" rel="noopener noreferrer">th0mk's nfsu2-web</a> (MIT). For study and personal use; you need your own copy of the game.</p>
+    <p class="hint">Contact, including rights holders: <a href="https://github.com/lguilherme44/nfsu1-web/issues" target="_blank" rel="noopener noreferrer">issues on GitHub</a></p>
+  </footer>
+</main>
+
+<div class="stage" id="stage" hidden>
+  <button type="button" class="stage-menu" id="stage-menu" tabindex="-1" aria-label="Menu" data-nfsu2-ui hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
+  <div class="hud-fps" id="fps" hidden></div>
+  <div class="toast" id="toast" hidden></div>
+  <div class="toast away" id="away" role="status" hidden></div>
+  <div class="toast queue" id="queue" hidden></div>
+  <div class="notices" id="notices" role="status" aria-live="polite"></div>
+  <div class="lobby" id="lobby" role="status" aria-live="polite" hidden></div>
+  <div class="lobby-cover" id="lobby-cover" role="status" aria-live="polite" hidden></div>
+</div>
+
+<div class="page-toast" id="page-toast" role="status" aria-live="polite"></div>
+
+<dialog class="dlg help" id="help" aria-labelledby="help-title">
+  <form method="dialog" class="dlg-head">
+    <h2 id="help-title">Controls</h2>
+    <button class="btn" value="close">Close</button>
+  </form>
+  <div id="help-body"></div>
+</dialog>
+
+<dialog class="dlg menu" id="menu" aria-labelledby="menu-title">
+  <h2 id="menu-title">Menu</h2>
+  <p class="hint">The game keeps running behind this menu.</p>
+  <p class="hint" id="menu-save"></p>
+  <div class="menu-actions">
+    <button type="button" class="btn selected" data-act="resume">Back to the game</button>
+    <button type="button" class="btn" data-act="fullscreen">Full screen</button>
+    <button type="button" class="btn" data-act="fps">Frame-rate counter: off</button>
+    <button type="button" class="btn" data-act="solid" title="On: you drive through the other players' cars, and they through yours. Off: you collide with them." hidden>Ghost mode: off</button>
+    <button type="button" class="btn" data-act="help">Controls</button>
+    <button type="button" class="btn" data-act="offline" hidden>Stop waiting: play offline</button>
+    <button type="button" class="btn" data-act="log">Download log</button>
+    <button type="button" class="btn danger" data-act="quit">Quit game</button>
+  </div>
+</dialog>
+
+<dialog class="dlg shot-view" id="shot-view" aria-labelledby="shot-title">
+  <form method="dialog" class="dlg-head">
+    <div>
+      <h2 id="shot-title">Screenshot</h2>
+      <p class="hint" id="shot-when"></p>
+    </div>
+    <button class="btn" value="close">Close</button>
+  </form>
+  <img id="shot-img" alt="">
+  <div class="shot-foot">
+    <button type="button" class="btn" data-act="newer" aria-keyshortcuts="ArrowLeft">‹ Newer</button>
+    <button type="button" class="btn" data-act="older" aria-keyshortcuts="ArrowRight">Older ›</button>
+    <span class="hint" id="shot-meta"></span>
+    <button type="button" class="btn" data-act="download">Download</button>
+    <button type="button" class="btn danger" data-act="delete">Delete</button>
+  </div>
+</dialog>
+
+<dialog class="dlg confirm" id="confirm" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <div id="confirm-body"></div>
+    <div class="row end">
+      <button class="btn" value="cancel" id="confirm-cancel" formnovalidate>Cancel</button>
+      <button class="btn selected" value="ok" id="confirm-ok"></button>
+    </div>
+  </form>
+</dialog>
+
+</body>
+</html>

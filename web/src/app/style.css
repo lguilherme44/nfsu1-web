@@ -1,0 +1,606 @@
+/* The start page, dressed like the game's own menus: black, grey panels,
+ * dark value boxes, lime for titles, values and the selected item (its
+ * glow is also the keyboard focus), grey-rimmed black buttons.  One type
+ * family; bold italic for titles, labels, values and buttons as in the
+ * game, upright for sentences.  Sizes: 14/20, 16/24, 20/28, 32/40.
+ * Every size and space is a multiple of 4 px. */
+
+:root {
+  --bg: #0d0d0d;
+  --frame: #171717;           /* the header bar and dialogs: the game's dark frame */
+  --panel: #262626;           /* sections: the game's grey panels */
+  --field: #121212;           /* value boxes, inputs, key caps */
+  --line: #3a3a3a;            /* dividers (decoration only) */
+  --edge: #8a8a8a;            /* rims of controls: 4.4:1 on a panel */
+  --text: #ffffff;
+  --muted: #c4c4c4;
+  --lime: #c8f088;            /* sampled from the game's menus */
+  --lime-fill: #404038;       /* the selected item's fill, also sampled */
+  --lime-glow: rgba(200, 240, 136, 0.45);
+  --bad: #ff8a80;
+  --warn: #ffd36e;
+
+  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+/* no zooming the page on a phone.  Android's browsers take the viewport's user-scalable=no (index.html); an
+ * iPhone's Safari ignores it, and a double tap zoomed in there.  Panning stays.  On every element, because WebKit
+ * starts a scroller (the settings' text box) over at auto; the game's canvas and touch controls keep none */
+* { box-sizing: border-box; touch-action: pan-x pan-y; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: radial-gradient(1200px 480px at 50% -160px, #2a2a2a, transparent 70%) no-repeat, var(--bg);
+  color: var(--text);
+  font: 400 16px/24px var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ul, dl, dd { margin: 0; }
+button, input, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+a { color: var(--lime); text-underline-offset: 4px; }
+code { font: 14px/20px var(--mono); }
+
+/* the game's type: bold italic */
+h1, h2, h3, .status, .btn, .play, kbd, .tab, .set-label, .opt, .val, summary, .profiles .name, .problems strong, .hud-fps {
+  font-style: italic; font-weight: 700;
+}
+.hint { color: var(--muted); font-size: 14px; line-height: 20px; }
+
+/* keyboard focus: the game's selected-item glow; also in a dialog a controller works (padnav.ts) */
+:focus-visible, .dlg[data-pad] :focus { outline: 2px solid var(--lime); outline-offset: 2px; box-shadow: 0 0 12px var(--lime-glow); }
+:focus:not(:focus-visible) { outline: none; }
+
+/* what fits the device (device.ts markTouch): keys where there is a keyboard, taps where a finger is the pointer */
+html[data-touch] .key-only, html:not([data-touch]) .touch-only { display: none; }
+
+/* ---------------------------------------------------------------- layout */
+.app {
+  max-width: 1184px; margin: 0 auto; padding: 24px 32px 48px;
+  display: grid; grid-template-columns: 384px minmax(0, 1fr); gap: 24px; align-items: start;
+}
+.top { grid-column: 1 / -1; background: var(--frame); border-radius: 12px; padding: 16px 24px 24px; }
+.top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; }
+/* the note and the Discord button; the note on a 24 px line, on the grid beside the 40 px title and button */
+.top-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.top-end .hint { line-height: 24px; }
+.side, .content { display: grid; gap: 24px; min-width: 0; }
+.panel { background: var(--panel); border-radius: 12px; padding: 24px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.row.end { justify-content: flex-end; }
+/* the page's last lines, the credits and the contact: quiet, centred, in the controls' rim grey */
+.foot { grid-column: 1 / -1; text-align: center; }
+.foot .hint, .foot a { color: var(--edge); }
+.foot a:hover { color: var(--lime); }
+
+h1 { font-size: 32px; line-height: 40px; }
+h2 { font-size: 20px; line-height: 28px; color: var(--lime); margin-bottom: 16px; }
+h3 { font-size: 16px; line-height: 24px; color: var(--lime); margin: 32px 0 8px; }
+.panel > h2 + .hint { margin: -12px 0 16px; }
+/* a heading with its buttons or a note at the right (Saves), under it on a narrow screen; the heading on the
+ * buttons' 40 px line, the note on the h3's 24 px line, so both stay on the grid */
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.panel-head.sub { margin: 32px 0 8px; }
+.panel-head h2 { margin: 0; line-height: 40px; }
+.panel-head h3 { margin: 0; }
+.panel-head .hint { line-height: 24px; }
+.panel-head + .msg { margin: -12px 0 16px; }
+#settings[data-readonly] #settings-note, #online[data-readonly] #online-note { color: var(--warn); }
+
+/* the game's slider bar under its header, here the download */
+.bar { margin-top: 12px; height: 8px; border-radius: 4px; background: #585858; overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 4px; background: var(--lime); box-shadow: 0 0 8px var(--lime-glow); transition: width 0.2s linear; }
+
+/* ------------------------------------------------------------- the hero */
+.status { font-size: 32px; line-height: 40px; }
+body[data-phase="ready"] .status { color: var(--lime); }
+body[data-phase="error"] .status { color: var(--bad); }
+.status-sub { margin: 4px 0 24px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Play across the panel; Retry, Reload and Download log under it */
+.hero .row { justify-content: center; }
+.hero .play { flex: 1 0 100%; justify-content: center; padding: 0 16px; }
+/* after a crash: the channel's name in one piece, not broken at its hyphen */
+#report a { white-space: nowrap; }
+
+/* ------------------------------------------------------------- controls */
+button, .file-btn { cursor: pointer; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px; border: 2px solid var(--edge); border-radius: 12px;
+  background: #080808; color: var(--text); font-size: 16px; line-height: 24px; white-space: nowrap; text-decoration: none;
+}
+.btn:hover:not(:disabled) { border-color: var(--lime); }
+.btn.selected, .play {
+  border: 2px solid var(--lime); background: var(--lime-fill); color: var(--lime); box-shadow: 0 0 12px var(--lime-glow);
+}
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.btn:disabled, .file-btn[aria-disabled], .text-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.file-btn { position: relative; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.file-btn:focus-within { outline: 2px solid var(--lime); outline-offset: 2px; box-shadow: 0 0 12px var(--lime-glow); }
+
+.play {
+  display: inline-flex; align-items: center; gap: 16px;
+  height: 48px; padding: 0 16px 0 24px; border-radius: 12px; font-size: 20px; line-height: 28px;
+}
+.play:hover:not(:disabled) { background: #4c5440; }
+.play:disabled { border-color: #4a4a4a; background: var(--field); color: var(--edge); box-shadow: none; cursor: not-allowed; }
+.play kbd { border-color: currentColor; background: none; color: inherit; }
+
+kbd {
+  display: inline-block; min-width: 24px; padding: 1px 8px; border: 1px solid var(--edge); border-radius: 4px;
+  background: var(--field); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 20px; text-align: center;
+}
+
+/* problems: only what stops the game or is worth knowing */
+.problems { list-style: none; padding: 0; display: grid; gap: 8px; margin-top: 16px; }
+.problems:empty { display: none; }
+.problems li { background: var(--field); border: 2px solid var(--bad); border-radius: 8px; padding: 12px 16px; }
+.problems li.warn { border-color: var(--warn); }
+.problems strong { display: block; }
+.problems p { color: var(--muted); font-size: 14px; line-height: 20px; margin-top: 4px; }
+
+/* ------------------------------------------------------- the key sheet */
+/* its tabs (controls.ts): words on a divider, the open one lime and underlined */
+.tabs { display: flex; gap: 24px; margin: -4px 0 16px; box-shadow: inset 0 -1px var(--line); }
+.tab { height: 36px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; line-height: 24px; }
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--lime); box-shadow: inset 0 -3px var(--lime); }
+/* a row as in Settings and the game's Controls menu: what it does, its keys on the right */
+.keys > div { display: flex; align-items: center; gap: 16px; padding: 8px 0; }
+.keys dt { order: 1; flex: none; margin-left: auto; display: flex; align-items: center; gap: 4px; color: var(--muted); }
+.tab-panel > .keys + .hint { margin-top: 16px; }
+.tab-panel > .hint + .set { margin-top: 8px; box-shadow: inset 0 1px var(--line); }
+/* the controller (controls.ts): the pad in line art, the buttons the game uses in lime, a dotted line from each
+ * label to its control, the button's name in a small key cap; the names as Xbox or PlayStation write them (the
+ * sheet's data-fam).  --pad-bg: what is behind it (the hollow of the bumpers) */
+.pad { display: block; width: 100%; max-width: 448px; height: auto; margin: 0 auto; overflow: visible; --pad-bg: var(--panel); }
+.dlg .pad { --pad-bg: var(--frame); }
+.pad-ctl > * { fill: none; stroke: var(--edge); stroke-width: 1.25; }
+.pad-ctl > .on { stroke: var(--lime); }
+.pad-ctl > .pad-body { stroke: var(--muted); stroke-width: 1.5; }
+.pad-ctl > .pad-bumper { stroke-width: 10; stroke-linecap: round; }
+.pad-ctl > .pad-bumper-in { stroke: var(--pad-bg); stroke-width: 6.5; stroke-linecap: round; }
+.pad-line { fill: none; stroke: #6a6a6a; stroke-width: 1; stroke-dasharray: 2 2; }
+.pad-dot { fill: var(--lime); }
+.pad-label { font: italic 700 12px var(--font); fill: var(--text); }
+.pad-sub { font: 400 11px var(--font); fill: var(--muted); }
+.pad-chip rect { fill: var(--field); stroke: var(--edge); stroke-width: 1; }
+.pad-chip text { font: italic 700 9px var(--font); fill: var(--text); text-anchor: middle; }
+.pad-chip :is(path, circle), kbd .glyph { fill: none; stroke: var(--text); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; stroke-width: 1.4; }
+[data-fam="xb"] .ps, [data-fam="ps"] .xb { display: none; }
+.pad-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 16px; }
+/* a steering wheel instead (wheel-setup.ts): its name, what its controls do, its set-up's step and the hold's bar */
+.wheel-name { font-size: 16px; line-height: 24px; margin-bottom: 4px; }
+.wheel .pad-foot .hint { flex: 1 1 240px; }
+.wheel-learn { margin-top: 16px; }
+.wheel-learn .bar { margin: 8px 0 4px; }
+.wheel-learn .bar-fill { transition: none; }
+.wheel-learn .text-btn { padding: 0; }
+
+/* ------------------------------------------- changes from the original */
+.changes { display: grid; gap: 12px; font-size: 14px; line-height: 20px; }
+
+/* -------------------------------------------------------------- settings */
+.group h3 { margin-top: 32px; }
+.group:first-child h3 { margin-top: 0; }
+.group-status { margin-bottom: 4px; }
+#online .group-status { margin-top: -12px; }          /* the section's subtitle, as Settings' note: 4px under its heading */
+.set {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label ctl" "help ctl";
+  column-gap: 16px; padding: 12px 0; align-items: center;
+}
+.set + .set, .more, .keys > div + div { box-shadow: inset 0 1px var(--line); }   /* a divider that adds no height */
+.set-label { grid-area: label; font-size: 16px; line-height: 24px; }
+.set-help { grid-area: help; color: var(--muted); font-size: 14px; line-height: 20px; }
+.set-state { grid-column: 1 / -1; font-size: 14px; line-height: 20px; margin-top: 8px; }
+.set-state.bad { color: var(--bad); }
+.set-state.env { color: var(--warn); }
+.set-control { grid-area: ctl; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.val { color: var(--lime); font-size: 14px; line-height: 20px; min-width: 24px; }
+.unit { color: var(--muted); font-size: 14px; line-height: 20px; }
+
+/* a choice: the game's value box, the chosen value selected */
+.seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 8px; background: var(--field); }
+.opt {
+  position: relative; display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+  border: 2px solid transparent; border-radius: 8px; color: var(--muted); font-size: 14px; line-height: 20px; cursor: pointer;
+}
+.opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.opt:hover { color: var(--text); }
+.opt:has(input:checked) { border-color: var(--lime); background: var(--lime-fill); color: var(--lime); box-shadow: 0 0 8px var(--lime-glow); }
+.opt:has(input:focus-visible) { outline: 2px solid var(--lime); outline-offset: 2px; }
+.opt:has(input:disabled) { cursor: not-allowed; opacity: 0.5; }
+
+.switch {
+  appearance: none; margin: 0; width: 56px; height: 32px; border-radius: 16px; border: 2px solid var(--edge); cursor: pointer;
+  background: radial-gradient(circle at 14px 50%, var(--edge) 8px, transparent 9px) no-repeat, var(--field);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.switch:checked {
+  border-color: var(--lime); box-shadow: 0 0 8px var(--lime-glow);
+  background: radial-gradient(circle at calc(100% - 14px) 50%, var(--lime) 8px, transparent 9px) no-repeat, var(--lime-fill);
+}
+.switch:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.set input[type="number"], .set input[type="text"], .profiles input[type="text"], .dlg input[type="text"] {
+  width: 128px; height: 40px; padding: 0 12px; border: 2px solid var(--edge); border-radius: 8px;
+  background: var(--field); color: var(--lime); font: italic 700 16px/24px var(--font);
+}
+.set input::placeholder { color: var(--edge); font-weight: 400; }
+/* a choice of many: the same value box, with a chevron */
+.set select {
+  appearance: none; width: 240px; height: 40px; padding: 0 36px 0 12px; border: 2px solid var(--edge); border-radius: 8px;
+  background: linear-gradient(45deg, transparent 50%, var(--lime) 50%) calc(100% - 20px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--lime) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat, var(--field);
+  color: var(--lime); font: italic 700 16px/24px var(--font); cursor: pointer;
+}
+.set select option { background: var(--field); color: var(--text); font-style: normal; }
+.set select:disabled { cursor: not-allowed; opacity: 0.5; }
+/* Listen beside a choice (Your horn): a play triangle in the value box's frame, a stop square while it plays; the
+   word stays the button's name (and its tooltip) */
+.listen {
+  position: relative; flex: none; width: 40px; height: 40px; padding: 0; border: 2px solid var(--edge); border-radius: 8px;
+  background: var(--field); font-size: 0; cursor: pointer;
+}
+.listen::before {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-35%, -50%);
+  border-style: solid; border-width: 8px 0 8px 13px; border-color: transparent transparent transparent var(--lime);
+}
+.listen:hover { border-color: var(--lime); }
+.listen[aria-pressed="true"] { border-color: var(--lime); background: var(--lime-fill); box-shadow: 0 0 8px var(--lime-glow); }
+.listen[aria-pressed="true"]::before { width: 12px; height: 12px; border: 0; background: var(--lime); transform: translate(-50%, -50%); }
+/* a small action as underlined text: a setting's Reset, the hero's Download log, Rename and Cancel in Saves */
+.text-btn {
+  height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none;
+  color: var(--muted); font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 4px;
+}
+.text-btn:hover:not(:disabled) { color: var(--lime); }
+
+summary { display: flex; align-items: center; gap: 8px; min-height: 48px; color: var(--muted); font-size: 14px; line-height: 20px; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: ""; width: 8px; height: 8px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(-45deg); transition: transform 0.15s ease; }
+details[open] > summary::before { transform: rotate(45deg); }
+summary:hover { color: var(--text); }
+
+.raw { margin-top: 24px; box-shadow: inset 0 1px var(--line); }
+.raw textarea {
+  display: block; width: 100%; margin-bottom: 12px; padding: 8px 12px; border: 2px solid var(--edge); border-radius: 8px;
+  background: var(--field); color: var(--text); font: 14px/20px var(--mono); resize: vertical; white-space: pre; overflow-x: auto;
+}
+
+/* ----------------------------------------------------------------- saves */
+.profiles { list-style: none; padding: 0; display: grid; gap: 4px; margin-bottom: 16px; }
+.profiles li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 8px 12px; border-radius: 8px; background: var(--field); }
+.profiles li.empty { color: var(--muted); font-size: 14px; line-height: 20px; }
+.profiles .name { color: var(--lime); margin-right: auto; }
+.profiles .meta { color: var(--muted); font-size: 14px; line-height: 24px; }   /* the name's line: on the grid beside it */
+.profiles .text-btn { padding: 0; }                 /* in line with the text above when wrapped */
+.profiles li > .text-btn { height: 24px; }            /* a row stays as tall as its name */
+.profiles li.renaming { flex-direction: column; align-items: stretch; gap: 8px; }
+.profiles li.renaming .msg { margin-top: 0; }
+/* the screenshots (shots.ts): four to a row, each cut to 16:9, the game's glow on the one pointed at; the newest
+ * eight, the dialog pages through the rest */
+.shots { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.shots:empty { display: none; }
+.shot {
+  position: relative; display: block; width: 100%; padding: 0; border: 2px solid transparent; border-radius: 4px;
+  background: var(--field); overflow: hidden; aspect-ratio: 16 / 9; cursor: zoom-in;
+}
+.shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shot:hover { border-color: var(--lime); box-shadow: 0 0 12px var(--lime-glow); }
+.shot .kind { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.shot .kind { color: var(--edge); font: italic 700 14px/20px var(--font); }     /* a file the page cannot draw */
+/* cloud saves (vault-ui.ts): Enable cloud saving beside the heading, or when it last synced; the keyphrase in a value
+ * box, its first 3 characters shown and the rest as dots (a mask over the field, which keeps the real text, its caret
+ * and selection) until the eye shows it; the actions as text under it */
+.vault .hint:empty { display: none; }
+.vault .hint.warn { color: var(--warn); }
+.vault-row { display: flex; align-items: center; gap: 8px; }
+.keybox {
+  display: flex; align-items: center; flex: 1; min-width: 0; height: 40px; padding-right: 2px;
+  border: 2px solid var(--edge); border-radius: 8px; background: var(--field);
+}
+.keybox:focus-within { border-color: var(--lime); box-shadow: 0 0 12px var(--lime-glow); }
+.keyfield { position: relative; flex: 1; min-width: 0; align-self: stretch; }
+.keyfield input, .keymask { padding: 0 10px; font: 14px/36px var(--mono); }
+.keyfield input { display: block; width: 100%; height: 100%; border: 0; background: none; color: var(--lime); outline: none; box-shadow: none; }
+.keyfield input::placeholder { color: var(--edge); font-family: var(--font); }
+.keymask { position: absolute; inset: 0; overflow: hidden; white-space: pre; color: var(--lime); pointer-events: none; }
+.keybox.masked input { color: transparent; caret-color: var(--lime); }
+.keybox:not(.masked) .keymask { display: none; }
+.icon-btn {
+  display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0;
+  border: 0; border-radius: 6px; background: none; color: var(--muted);
+}
+.icon-btn:hover:not(:disabled) { color: var(--lime); }
+.icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.eye .off, .eye[aria-pressed="true"] .on { display: none; }
+.eye[aria-pressed="true"] .off { display: block; }
+#vault-about, #vault-status { margin-top: 8px; }
+#vault-conflict { margin-top: 12px; }
+#vault-on { margin-top: 4px; gap: 4px 16px; }
+#vault-on .text-btn { padding: 0; height: 24px; }
+#cache-info { font-variant-numeric: tabular-nums; }
+#data-bar { margin: 0 0 16px; }
+.msg { font-size: 14px; line-height: 20px; margin-top: 12px; }
+.msg:empty { display: none; }
+.msg.warn { color: var(--warn); }
+
+/* a short message at the bottom of the page (settings saved) */
+.page-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 5; max-width: calc(100vw - 32px);
+  padding: 8px 16px; border: 2px solid var(--edge); border-radius: 12px; background: var(--frame);
+  font-size: 14px; line-height: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.page-toast:empty { display: none; }
+
+/* ----------------------------------------------------------------- stage */
+.stage { position: fixed; inset: 0; z-index: 10; background: #000; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* the start page behind the game does not scroll: its scrollbar would stay beside the game out of full screen
+ * (full screen refused, or left), and the game a scrollbar narrower */
+html:has(> body > .stage:not([hidden])) { overflow: hidden; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: none; touch-action: none; }
+.stage.cursor canvas { cursor: default; }
+
+.stage-loading {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at center, #111a24 0%, #05080c 100%); color: #fff; z-index: 50; pointer-events: none;
+  transition: opacity 0.4s ease-out; font-family: system-ui, -apple-system, sans-serif;
+}
+.stage-loading.fade-out { opacity: 0; }
+.stage-loading-title {
+  font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #00d4ff; text-shadow: 0 0 15px rgba(0, 212, 255, 0.6); margin-bottom: 16px;
+}
+.stage-loading-desc { font-size: 14px; color: #8fa0b0; letter-spacing: 0.5px; }
+.stage-spinner {
+  width: 48px; height: 48px; border: 4px solid rgba(0, 212, 255, 0.2); border-top-color: #00d4ff; border-radius: 50%;
+  animation: stage-spin 0.9s linear infinite; margin-bottom: 24px;
+}
+@keyframes stage-spin { to { transform: rotate(360deg); } }
+/* the menu's button on the game (touch screens): small and dim in the top left corner, clear of a notch */
+.stage-menu {
+  position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left));
+  width: 48px; height: 48px; padding: 12px; border: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4); color: rgba(255, 255, 255, 0.72); -webkit-tap-highlight-color: transparent;
+}
+.stage-menu svg { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.stage-menu:active { background: rgba(0, 0, 0, 0.72); color: var(--lime); }
+/* touch controls (touch.ts) while the player drives: dim and see-through like the menu's button, lime while
+ * pressed.  The small round ones in a row after the menu's button (the mode button and tilt's straight-ahead top
+ * right), the left thumb's bottom left, the right thumb's bottom right; free roam adds a row's end and Start. */
+.touch {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; -webkit-user-select: none; user-select: none;
+  --l: max(12px, env(safe-area-inset-left)); --r: max(12px, env(safe-area-inset-right));
+  --t: max(12px, env(safe-area-inset-top)); --b: max(12px, env(safe-area-inset-bottom));
+}
+.touch > * { position: absolute; pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.tc {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  background: rgba(0, 0, 0, 0.4); color: rgba(255, 255, 255, 0.72); font: italic 700 16px/20px var(--font);
+}
+.tc svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tc svg .fill { fill: currentColor; stroke: none; }
+.tc.on { background: rgba(0, 0, 0, 0.72); color: var(--lime); }
+.tc.small { top: var(--t); width: 48px; height: 48px; border-radius: 50%; }
+.tc.big { bottom: var(--b); border-radius: 16px; }
+.tc.big svg { width: 32px; height: 32px; }
+.tc.round { border-radius: 50%; font-size: 14px; line-height: 16px; }
+.tc.pill { height: 40px; padding: 0 20px; border-radius: 20px; }
+.tc[data-ctl="pause"] { left: calc(var(--l) + 56px); }
+.tc[data-ctl="camera"] { left: calc(var(--l) + 112px); }
+.tc[data-ctl="look"] { left: calc(var(--l) + 168px); }
+.tc[data-ctl="reset"] { left: calc(var(--l) + 224px); }
+.tc[data-ctl="map"] { left: calc(var(--l) + 280px); }
+.tc[data-ctl="msgs"] { left: calc(var(--l) + 336px); }
+.tc[data-ctl="horn"] { left: calc(var(--l) + 392px); }
+.tc[data-ctl="mode"] { right: var(--r); }
+.tc[data-ctl="center"] { right: calc(var(--r) + 56px); }
+.tc[data-ctl="start"] { left: var(--l); bottom: calc(var(--b) + 128px); }
+.tc[data-ctl="left"] { left: var(--l); width: 80px; height: 80px; }
+.tc[data-ctl="right"] { left: calc(var(--l) + 88px); width: 80px; height: 80px; }
+.tc[data-ctl="gas"] { right: var(--r); width: 84px; height: 148px; }
+.tc[data-ctl="brake"] { right: calc(var(--r) + 92px); width: 84px; height: 104px; }
+.tc[data-ctl="nitro"] { right: calc(var(--r) + 12px); bottom: calc(var(--b) + 160px); width: 60px; height: 60px; }
+.tc[data-ctl="hb"] { right: calc(var(--r) + 106px); bottom: calc(var(--b) + 116px); width: 56px; height: 56px; font-size: 12px; line-height: 14px; }
+/* a manual gearbox: gear down and up above the left thumb's controls (the arrows, the stick's corner, or tilt's
+ * Brake and handbrake), and free roam's Start above them */
+.touch { --gb: 88px; }
+.touch[data-steering="stick"] { --gb: 132px; }
+.touch[data-steering="tilt"] { --gb: 112px; }
+.tc.gear { bottom: calc(var(--b) + var(--gb)); width: 80px; height: 56px; border-radius: 16px; }
+.tc.gear svg { width: 32px; height: 32px; stroke-width: 2.5; }
+.tc[data-ctl="down"] { left: var(--l); }
+.tc[data-ctl="up"] { left: calc(var(--l) + 88px); }
+.touch[data-gears] .tc[data-ctl="start"] { bottom: calc(var(--b) + var(--gb) + 72px); }
+.touch:not([data-gears]) .gear { display: none; }
+/* tilt: Brake and the handbrake under the left thumb, Nitro beside Gas */
+.touch[data-steering="tilt"] .tc[data-ctl="brake"] { right: auto; left: var(--l); }
+.touch[data-steering="tilt"] .tc[data-ctl="hb"] { right: auto; left: calc(var(--l) + 96px); bottom: calc(var(--b) + 24px); }
+.touch[data-steering="tilt"] .tc[data-ctl="nitro"] { right: calc(var(--r) + 96px); bottom: calc(var(--b) + 24px); }
+.touch:not([data-steering="buttons"]) :is([data-ctl="left"], [data-ctl="right"]),
+.touch:not([data-steering="stick"]) .stick,
+.touch:not([data-steering="tilt"]) [data-ctl="center"],
+.touch:not([data-roam]) .roam { display: none; }
+/* the thumb stick: anywhere in the lower left; at rest it waits in the corner, a touch brings it under the thumb */
+.stick { left: 0; bottom: 0; width: 42%; height: 72%; }
+.stick-base {
+  position: absolute; left: calc(var(--l) + 60px); top: calc(100% - var(--b) - 60px); width: 120px; height: 120px;
+  border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(255, 255, 255, 0.24); background: rgba(0, 0, 0, 0.24);
+}
+.stick-knob {
+  position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; border-radius: 50%;
+  transform: translate(calc(-50% + var(--dx, 0px)), -50%); background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 255, 255, 0.5);
+}
+/* the field for a phone's keyboard while the game asks for text (textentry.ts): a value box at the top, where the
+ * keyboard coming up from below leaves it in sight; the stage's no-select would keep WebKit from typing into it */
+.type { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); margin: 0; }
+.type input {
+  width: 240px; height: 48px; padding: 0 12px; border: 2px solid var(--edge); border-radius: 8px;
+  background: var(--field); color: var(--lime); font: italic 700 16px/24px var(--font);
+  -webkit-user-select: text; user-select: text; touch-action: manipulation;
+}
+/* a note on the game, and the frame-rate counter, go under the row of small buttons */
+.stage:has(> .touch:not([hidden])) :is(.toast:not(.away), .hud-fps) { top: calc(max(12px, env(safe-area-inset-top)) + 60px); }
+/* a touch screen held upright: the game in a 4:5 picture at the top, as wide as the screen and at most 60% of its
+ * height, and the menu's button and the touch controls in the space below it, so nothing covers the picture */
+@media (orientation: portrait) {
+  html[data-touch] .stage { --pic-h: min(125vw, 60dvh); }
+  html[data-touch] .stage canvas { inset: 0 auto auto 50%; width: calc(var(--pic-h) * 0.8); height: var(--pic-h); transform: translateX(-50%); }
+  html[data-touch] .stage-menu { top: calc(var(--pic-h) + 12px); }
+  html[data-touch] .touch { --t: calc(var(--pic-h) + 12px); }
+  html[data-touch] .stage:has(> .touch:not([hidden])) :is(.toast:not(.away), .hud-fps) { top: 16px; }
+  html[data-touch] .tc[data-ctl="map"] { left: var(--l); top: calc(var(--t) + 56px); }
+  html[data-touch] .tc[data-ctl="msgs"] { left: calc(var(--l) + 56px); top: calc(var(--t) + 56px); }
+  html[data-touch] .tc[data-ctl="horn"] { left: calc(var(--l) + 112px); top: calc(var(--t) + 56px); }
+  html[data-touch] .stick { top: calc(var(--pic-h) + 64px); height: auto; width: 50%; }
+  /* below the picture, on black: a light backing, and room for bigger pedals and steering */
+  html[data-touch] :is(.tc, .stage-menu) { background: rgba(255, 255, 255, 0.1); }
+  html[data-touch] :is(.tc.on, .stage-menu:active) { background: rgba(255, 255, 255, 0.2); }
+  html[data-touch] .stick-base { background: rgba(255, 255, 255, 0.06); }
+  html[data-touch] .tc[data-ctl="left"] { width: 88px; height: 120px; }
+  html[data-touch] .tc[data-ctl="right"] { left: calc(var(--l) + 96px); width: 88px; height: 120px; }
+  html[data-touch] .tc[data-ctl="gas"] { width: 88px; height: 200px; }
+  html[data-touch] .tc[data-ctl="brake"] { right: calc(var(--r) + 96px); width: 88px; height: 140px; }
+  html[data-touch] .tc[data-ctl="nitro"] { right: calc(var(--r) + 12px); bottom: calc(var(--b) + 212px); width: 64px; height: 64px; }
+  html[data-touch] .tc[data-ctl="hb"] { right: calc(var(--r) + 110px); bottom: calc(var(--b) + 152px); width: 60px; height: 60px; }
+  html[data-touch] .tc[data-ctl="start"] { bottom: calc(var(--b) + 132px); }
+  html[data-touch] .touch { --gb: 132px; }
+  html[data-touch] .touch[data-steering="tilt"] { --gb: 148px; }
+  html[data-touch] .tc.gear { width: 88px; height: 64px; }
+  html[data-touch] .tc[data-ctl="up"] { left: calc(var(--l) + 96px); }
+  html[data-touch] .touch[data-steering="tilt"] .tc[data-ctl="hb"] { right: auto; left: calc(var(--l) + 100px); bottom: calc(var(--b) + 24px); }
+  html[data-touch] .touch[data-steering="tilt"] .tc[data-ctl="nitro"] { right: calc(var(--r) + 100px); bottom: calc(var(--b) + 24px); }
+}
+.stick-base.on { border-color: rgba(200, 240, 136, 0.5); }
+.stick-base.on .stick-knob { border-color: var(--lime); background: rgba(0, 0, 0, 0.72); }
+.hud-fps {
+  position: absolute; top: 16px; right: 16px; z-index: 2; pointer-events: none; min-width: 80px;
+  padding: 4px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.64);
+  color: var(--lime); font-size: 20px; line-height: 28px; font-variant-numeric: tabular-nums; text-align: right;
+}
+.hud-fps small { margin-left: 4px; color: var(--muted); font-size: 12px; line-height: 16px; }
+.hud-fps dl { display: grid; grid-template-columns: auto auto; gap: 0 12px; margin-top: 4px; font: 400 12px/16px var(--font); color: var(--text); }
+.hud-fps dt { color: var(--muted); text-align: left; }
+.hud-fps dd { font-variant-numeric: tabular-nums; }
+.toast {
+  position: absolute; left: 50%; top: 16px; transform: translateX(-50%); z-index: 3; max-width: calc(100vw - 32px);
+  padding: 8px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.8); font-size: 14px; line-height: 20px; pointer-events: none;
+}
+/* the away check (away.ts): in the middle, until the player is back */
+.toast.away { top: 50%; transform: translate(-50%, -50%); width: max-content; max-width: min(560px, calc(100vw - 32px)); text-align: center; }
+/* a full server: the place in line for one (players.ts queueText), at the top while the game waits; a note on the
+ * game goes under it */
+.toast.queue { width: max-content; text-align: center; }
+.stage:has(> .queue:not([hidden])) .toast:not(.away):not(.queue) { margin-top: 44px; }
+/* free roam: friends joining, leaving, going into a race; a quiet log on the left between the game's SMS
+ * icon and its radar (shell.ts placeNotices: the place, and --u, one HUD unit), sized with the HUD: small
+ * dim italic text, the friend's name in lime; newest at the bottom, each fading out after 5 s (when
+ * notice() removes it) */
+.notices {
+  --u: 1px;
+  position: absolute; left: 16px; top: 40%; z-index: 3; height: calc(88 * var(--u)); max-width: calc(240 * var(--u));
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: calc(2 * var(--u));
+  overflow: hidden; pointer-events: none;
+  font: italic 400 max(11px, calc(5.5 * var(--u))) / 1.35 var(--font); color: rgba(255, 255, 255, 0.62);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 calc(3 * var(--u)) rgba(0, 0, 0, 0.5);
+}
+.notices div { animation: notice-fade 5s linear both; }
+.notices b { font-weight: 700; color: rgba(200, 240, 136, 0.9); }    /* --lime */
+@keyframes notice-fade { 0% { opacity: 0; } 4%, 84% { opacity: 1; } 100% { opacity: 0; } }
+/* free roam: the race lobby (lobby.ts): a card on the right under the game's Bank box, a little wider than it and its
+ * text about the size of the HUD's (--u: one HUD unit), and over the trip to the race and back a cover of the whole
+ * picture with the lobby in the middle, in the same step */
+.lobby {
+  --u: 1px;
+  position: absolute; left: 0; top: 0; z-index: 3; transform: translateX(-100%);
+  width: calc(190 * var(--u)); min-width: 220px; padding: calc(10 * var(--u)) calc(12 * var(--u));
+  border-left: 3px solid var(--lime); border-radius: 4px; background: rgba(13, 13, 13, 0.78);
+  font: 400 max(13px, calc(11 * var(--u))) / 1.35 var(--font); color: var(--text); pointer-events: none;
+}
+.lobby-title { font-size: 1.1em; font-weight: 700; font-style: italic; text-transform: uppercase; letter-spacing: 0.02em; color: var(--lime); }
+.lobby-sub, .lobby-hint { color: var(--muted); font-size: 0.85em; }
+.lobby-why { margin-top: 0.4em; color: var(--muted); }
+.lobby-places { list-style: none; margin: 0.5em 0 0; padding: 0; }
+.lobby-places li { display: flex; gap: 0.6em; align-items: baseline; padding: 0.12em 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.lobby-places li.open { color: rgba(255, 255, 255, 0.35); font-style: italic; }
+.lobby-places.dim li.taken { opacity: 0.6; }
+.lobby-n { width: 1em; text-align: right; color: var(--muted); }
+.lobby-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lobby-tag { font-size: 0.75em; text-transform: uppercase; color: var(--lime); }
+.lobby-act { display: flex; gap: 0.5em; align-items: center; margin-top: 0.6em; }
+.lobby-act kbd {
+  padding: 0 0.4em; border: 1px solid var(--edge); border-radius: 3px; background: var(--field);
+  font: 700 0.85em/1.5 var(--font); color: var(--text);
+}
+.lobby-count { margin-top: 0.5em; font-size: 1.5em; font-weight: 700; font-style: italic; color: var(--lime); }
+.lobby-note { color: var(--text); }
+.lobby-cover {
+  --u: 1px;
+  position: absolute; inset: 0; z-index: 4; display: grid; place-items: center;
+  background: radial-gradient(60% 60% at 50% 45%, #202020, #0a0a0a);
+  font: 400 max(16px, calc(14.5 * var(--u))) / 1.4 var(--font); color: var(--text);
+}
+.lobby-cover[hidden] { display: none; }
+.lobby-card { width: min(calc(400 * var(--u)), calc(100% - 32px)); min-width: min(300px, calc(100% - 32px)); }
+.lobby-card .lobby-title { font-size: 1.4em; }
+.lobby-step { display: flex; gap: 0.6em; align-items: center; margin-top: 1em; color: var(--muted); }
+.lobby-spin {
+  width: 1em; height: 1em; border: 2px solid rgba(255, 255, 255, 0.2); border-top-color: var(--lime); border-radius: 50%;
+  animation: lobby-spin 0.9s linear infinite;
+}
+@keyframes lobby-spin { to { transform: rotate(1turn); } }
+
+/* --------------------------------------------------------------- dialogs */
+dialog { color: var(--text); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
+.dlg {
+  width: min(448px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 24px;
+  border: 2px solid var(--line); border-radius: 12px; background: var(--frame);
+}
+.dlg h2 { margin-bottom: 8px; }
+.dlg .hint { margin-bottom: 16px; }
+.dlg p { margin-bottom: 16px; }
+.dlg ul { margin: 0 0 16px; padding-left: 24px; color: var(--muted); font-size: 14px; line-height: 20px; }
+.dlg .row.end { margin-top: 8px; }
+.dlg-field { display: flex; align-items: center; gap: 12px; }
+.dlg-field input[type="text"] { flex: 1; min-width: 0; }
+.dlg.help { width: min(560px, calc(100vw - 32px)); }
+/* one screenshot (shots.ts): as large as the window allows, under it its place, Download and Delete */
+.dlg.shot-view { width: min(1232px, calc(100vw - 32px)); }
+.shot-view .dlg-head .hint { margin: 0; }
+#shot-img {
+  display: block; width: 100%; max-height: calc(100dvh - 216px); aspect-ratio: auto 16 / 9; object-fit: contain;
+  border-radius: 8px; background: #000;
+}
+.shot-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+.shot-foot .hint { margin: 0 auto 0 8px; font-variant-numeric: tabular-nums; }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.dlg-head h2 { margin: 0; }
+.menu-actions { display: grid; gap: 8px; }
+#menu-save { margin-top: -12px; }
+#menu-save:empty { display: none; }
+
+/* ---------------------------------------------------------------- narrow */
+@media (max-width: 959px) {
+  .app { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 48px; gap: 16px; }
+  .side, .content { gap: 16px; }
+}
+@media (max-width: 559px) {
+  .top, .panel { padding: 16px; }
+  .set { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "help" "ctl"; }
+  .set-control { justify-content: flex-start; margin-top: 8px; flex-wrap: wrap; }
+  .set-control > .seg { display: flex; flex: 1; }
+  .set-control > .text-btn { order: 1; }            /* Reset after the control here, where the control is aligned left */
+  .opt { flex: 1; justify-content: center; padding: 0 8px; }
+}
+/* a phone in landscape: the page menu's buttons in two columns, so Quit game needs no scrolling */
+@media (max-height: 479px) {
+  .menu-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

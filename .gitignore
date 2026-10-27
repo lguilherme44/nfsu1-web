@@ -1,0 +1,37 @@
+# The game and everything made from it never go in the repo:
+# the game folder (SPEED.EXE and its data, EA's copyrighted content),
+/NFS Underground*/
+*.exe
+*.EXE
+*.mad
+*.MAD
+# the C translated from SPEED.EXE (tools/lift.py, tools/genall.py, tools/argcount.py),
+/gen/
+/gen.bak*/
+# and the compiled modules (they contain that code), local certificates and build scratch.
+/out/
+/work/
+deploy/game/
+deploy/module/
+web/deploy/game/
+web/deploy/module/
+*.pem
+.env
+
+# Tools and build output
+/.venv
+/deps
+deps
+node_modules
+/web/dist/
+/web/dist-dev/
+chrome-profile/
+__pycache__/
+*.pyc
+*.o
+*.log
+*.err
+.DS_Store
+
+# text extracted from the game (tools/lang_tool.py): EA content, never committed
+tools/strings_*.json

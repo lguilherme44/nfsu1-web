@@ -1,0 +1,40 @@
+# Testes que não precisam do jogo: a página (tsc), a suíte de web/test e o servidor Rust (build + testes).
+# O que depende do SPEED.EXE (gen/, o módulo .wasm, os testes no Chrome) roda só na máquina de quem tem o jogo.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: web/server-rs -> ../../out/web/server-rs/target
+      - name: npm ci
+        working-directory: web
+        run: npm ci --no-audit --no-fund
+      - name: tsc
+        working-directory: web
+        run: npx tsc -p .
+      - name: page build
+        working-directory: web
+        run: node build.mjs
+      - name: Rust server
+        run: web/server-rs/build.sh
+      - name: web/test
+        working-directory: web
+        run: node --test --test-concurrency=2 test/*.test.mjs
