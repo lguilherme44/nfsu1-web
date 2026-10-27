@@ -34,7 +34,7 @@ const DATA = path.join(TMP, 'game');
 const FILES = { 'SPEED.EXE': bytes(3 * M + 17, 'exe', false), 'TRACKS/L4RA.BUN': bytes(8 * M + 5, 'track', true),
   'MOVIES/INTRO.VP6': bytes(2 * M, 'movie', false),
   // a first block that does not compress before two that do (as the game's music): judged per run
-  'PFDATA/MIX.MUS': Buffer.concat([bytes(M, 'mix0', false), bytes(2 * M, 'mix1', true)]) };
+  'SNDSTREAMS/MIX.MUS': Buffer.concat([bytes(M, 'mix0', false), bytes(2 * M, 'mix1', true)]) };
 for (const [p, b] of Object.entries(FILES)) { fs.mkdirSync(path.dirname(path.join(DATA, p)), { recursive: true }); fs.writeFileSync(path.join(DATA, p), b); }
 fs.writeFileSync(path.join(DATA, 'NOTES.TXT'), 'not the game');
 fs.writeFileSync(path.join(TMP, 'game.wasm'), Buffer.alloc(8));
@@ -94,8 +94,8 @@ test('/data-blocks/: named by the manifest, exact in every encoding, as they are
     }
     // the last, short block; one block; a file that does not compress (random bytes, the movies' video)
     assert.ok((await get('/data-blocks/TRACKS/L4RA.BUN?b=8&n=1')).body.equals(slice('TRACKS/L4RA.BUN', 8, 1)));
-    for (const [f, b, n, enc] of [['SPEED.EXE', 0, 4, undefined], ['MOVIES/INTRO.VP6', 1, 1, undefined], ['PFDATA/MIX.MUS', 0, 3, undefined],
-      ['PFDATA/MIX.MUS', 1, 2, encs[0]]]) {
+    for (const [f, b, n, enc] of [['SPEED.EXE', 0, 4, undefined], ['MOVIES/INTRO.VP6', 1, 1, undefined], ['SNDSTREAMS/MIX.MUS', 0, 3, undefined],
+      ['SNDSTREAMS/MIX.MUS', 1, 2, encs[0]]]) {
       const r = await get(`/data-blocks/${f}?b=${b}&n=${n}`);
       assert.equal(r.headers['content-encoding'], enc, `${f} from block ${b}`);
       assert.ok(r.body.equals(slice(f, b, n)), f);
@@ -124,7 +124,7 @@ test('/data-blocks/: a shared cache may keep a run for good: this version of the
     const run = (f, b, n, mt = m[f], ae, sz = FILES[f].length) =>
       get(`/data-blocks/${f}?b=${b}&n=${n}${mt === null ? '' : `&m=${mt}`}${sz === null ? '' : `&s=${sz}`}`, ae ? { ae } : undefined);
     // compressed, or a run that does not compress: kept, and still exact
-    for (const [f, b, n, ae] of [['TRACKS/L4RA.BUN', 1, 8], ['TRACKS/L4RA.BUN', 0, 1, 'gzip, br'], ['SPEED.EXE', 0, 4], ['PFDATA/MIX.MUS', 0, 1],
+    for (const [f, b, n, ae] of [['TRACKS/L4RA.BUN', 1, 8], ['TRACKS/L4RA.BUN', 0, 1, 'gzip, br'], ['SPEED.EXE', 0, 4], ['SNDSTREAMS/MIX.MUS', 0, 1],
       ['MOVIES/INTRO.VP6', 0, 2]]) {
       const r = await run(f, b, n, m[f], ae);
       assert.equal(r.status, 200, f);
