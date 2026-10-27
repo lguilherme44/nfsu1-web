@@ -35,3 +35,5 @@ __pycache__/
 
 # text extracted from the game (tools/lang_tool.py): EA content, never committed
 tools/strings_*.json
+# the public CA certificate the Rust server embeds (Cloudflare Origin Pull): not a key
+!web/server-rs/crates/headers/cloudflare-origin-pull-ca.pem
