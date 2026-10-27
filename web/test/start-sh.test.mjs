@@ -20,7 +20,7 @@ function tree({ module = 0, page = 0, server = 0 } = {}) {
   const t = path.join(base, `t${n++}`);
   const w = (p, s, mode) => { fs.mkdirSync(path.dirname(path.join(t, p)), { recursive: true }); fs.writeFileSync(path.join(t, p), s); if (mode) fs.chmodSync(path.join(t, p), mode); };
   w('web/start.sh', fs.readFileSync(path.join(ROOT, 'web/start.sh')), 0o755);
-  w('game/SPEED2.EXE', 'x');
+  w('game/SPEED.EXE', 'x');
   for (const d of ['web/node_modules/esbuild', 'deps/wasi-sdk-34']) fs.mkdirSync(path.join(t, d), { recursive: true });
   w('gen/all/fntab.c', '');
   w('out/web/nfsu2.wasm', 'old module');

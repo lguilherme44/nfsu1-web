@@ -44,11 +44,12 @@ say() { printf '\033[1m%s\033[0m\n' "$*"; }
 # ---- the game folder ----------------------------------------------------------
 if [ -z "$DATA" ]; then DATA="${NFSU2_DATA:-}"; fi
 if [ -z "$DATA" ] && [ -f "$STATE/data-path" ]; then DATA="$(cat "$STATE/data-path")"; fi
-if [ -z "$DATA" ] && [ -d "$HOME/projects/nsfu2/Need for Speed - Underground 2" ]; then DATA="$HOME/projects/nsfu2/Need for Speed - Underground 2"; fi
-if [ -z "$DATA" ] || [ ! -f "$DATA/SPEED2.EXE" ]; then
-  echo "Where is the game?  Start with the folder that holds SPEED2.EXE:"
-  echo "  web/start.sh --data \"/path/to/Need for Speed - Underground 2\""
-  [ -n "$DATA" ] && echo "(\"$DATA\" has no SPEED2.EXE)"
+# the install folder's own spelling: SPEED.EXE on the disc, speed.exe in some installs (as the server)
+has_exe() { [ -f "$1/SPEED.EXE" ] || [ -f "$1/speed.exe" ] || [ -f "$1/Speed.exe" ]; }
+if [ -z "$DATA" ] || ! has_exe "$DATA"; then
+  echo "Where is the game?  Start with the folder that holds SPEED.EXE:"
+  echo "  web/start.sh --data \"/path/to/Need for Speed Underground\""
+  [ -n "$DATA" ] && echo "(\"$DATA\" has no SPEED.EXE)"
   exit 1
 fi
 mkdir -p "$STATE"; printf '%s' "$DATA" > "$STATE/data-path"

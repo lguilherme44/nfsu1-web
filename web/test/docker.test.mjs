@@ -10,8 +10,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-// the game's file names (web/deploy/pack.sh refuses the same in its bundle)
-const GAME_NAMES = /(^|\/)SPEED2\.EXE$|\.(BUN|BIN|LZC|VIV|MUS|ASF|VP6|ABK|GIN|CSI|MPF|AUD|LZW|DLL|EXE)$/i;
+// the game's file names: never in the image's build context
+const GAME_NAMES = /(^|\/)SPEED2?\.EXE$|\.(BUN|BIN|LZC|VIV|MUS|ASF|VP6|MAD|ABK|GIN|CSI|MPF|AUD|LZW|DLL|EXE)$/i;
 
 // the Dockerfile, its ignore file, and what may go into its build (sources only, never gen/ (the lifted game code),
 // out/ (the module) or the game folder)

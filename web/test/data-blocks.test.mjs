@@ -31,7 +31,7 @@ const bytes = (size, seed, packs) => {
   return b;
 };
 const DATA = path.join(TMP, 'game');
-const FILES = { 'SPEED2.EXE': bytes(3 * M + 17, 'exe', false), 'TRACKS/L4RA.BUN': bytes(8 * M + 5, 'track', true),
+const FILES = { 'SPEED.EXE': bytes(3 * M + 17, 'exe', false), 'TRACKS/L4RA.BUN': bytes(8 * M + 5, 'track', true),
   'MOVIES/INTRO.VP6': bytes(2 * M, 'movie', false),
   // a first block that does not compress before two that do (as the game's music): judged per run
   'PFDATA/MIX.MUS': Buffer.concat([bytes(M, 'mix0', false), bytes(2 * M, 'mix1', true)]) };
@@ -94,7 +94,7 @@ test('/data-blocks/: named by the manifest, exact in every encoding, as they are
     }
     // the last, short block; one block; a file that does not compress (random bytes, the movies' video)
     assert.ok((await get('/data-blocks/TRACKS/L4RA.BUN?b=8&n=1')).body.equals(slice('TRACKS/L4RA.BUN', 8, 1)));
-    for (const [f, b, n, enc] of [['SPEED2.EXE', 0, 4, undefined], ['MOVIES/INTRO.VP6', 1, 1, undefined], ['PFDATA/MIX.MUS', 0, 3, undefined],
+    for (const [f, b, n, enc] of [['SPEED.EXE', 0, 4, undefined], ['MOVIES/INTRO.VP6', 1, 1, undefined], ['PFDATA/MIX.MUS', 0, 3, undefined],
       ['PFDATA/MIX.MUS', 1, 2, encs[0]]]) {
       const r = await get(`/data-blocks/${f}?b=${b}&n=${n}`);
       assert.equal(r.headers['content-encoding'], enc, `${f} from block ${b}`);
@@ -106,13 +106,13 @@ test('/data-blocks/: named by the manifest, exact in every encoding, as they are
 
     // refused: out of bounds, past the end, not a game file, not inside the folder
     const status = async p => (await get(p)).status;
-    for (const p of ['SPEED2.EXE', 'SPEED2.EXE?b=0', 'SPEED2.EXE?b=0&n=0', 'SPEED2.EXE?b=0&n=9', 'SPEED2.EXE?b=-1&n=1', 'SPEED2.EXE?b=1e3&n=1',
-      'SPEED2.EXE?b=12345678&n=1', 'SPEED2.EXE?b=0&n=01x']) assert.equal(await status(`/data-blocks/${p}`), 400, p);
-    assert.equal(await status('/data-blocks/SPEED2.EXE?b=4&n=1'), 416);       // 3 MiB + 17: blocks 0..3
+    for (const p of ['SPEED.EXE', 'SPEED.EXE?b=0', 'SPEED.EXE?b=0&n=0', 'SPEED.EXE?b=0&n=9', 'SPEED.EXE?b=-1&n=1', 'SPEED.EXE?b=1e3&n=1',
+      'SPEED.EXE?b=12345678&n=1', 'SPEED.EXE?b=0&n=01x']) assert.equal(await status(`/data-blocks/${p}`), 400, p);
+    assert.equal(await status('/data-blocks/SPEED.EXE?b=4&n=1'), 416);       // 3 MiB + 17: blocks 0..3
     assert.equal(await status('/data-blocks/NOTES.TXT?b=0&n=1'), 404);
     assert.equal(await status('/data-blocks/TRACKS?b=0&n=1'), 404);
     assert.equal(await status('/data-blocks/TRACKS/.hidden?b=0&n=1'), 404);
-    // (TRACKS/../SPEED2.EXE is SPEED2.EXE: the URL is resolved before anything is looked up, as for /data/)
+    // (TRACKS/../SPEED.EXE is SPEED.EXE: the URL is resolved before anything is looked up, as for /data/)
     assert.equal(await status('/data-blocks/..%2fstate/etag.key?b=0&n=1'), 400);
   } finally { await s.stop(); }
 });
@@ -124,7 +124,7 @@ test('/data-blocks/: a shared cache may keep a run for good: this version of the
     const run = (f, b, n, mt = m[f], ae, sz = FILES[f].length) =>
       get(`/data-blocks/${f}?b=${b}&n=${n}${mt === null ? '' : `&m=${mt}`}${sz === null ? '' : `&s=${sz}`}`, ae ? { ae } : undefined);
     // compressed, or a run that does not compress: kept, and still exact
-    for (const [f, b, n, ae] of [['TRACKS/L4RA.BUN', 1, 8], ['TRACKS/L4RA.BUN', 0, 1, 'gzip, br'], ['SPEED2.EXE', 0, 4], ['PFDATA/MIX.MUS', 0, 1],
+    for (const [f, b, n, ae] of [['TRACKS/L4RA.BUN', 1, 8], ['TRACKS/L4RA.BUN', 0, 1, 'gzip, br'], ['SPEED.EXE', 0, 4], ['PFDATA/MIX.MUS', 0, 1],
       ['MOVIES/INTRO.VP6', 0, 2]]) {
       const r = await run(f, b, n, m[f], ae);
       assert.equal(r.status, 200, f);

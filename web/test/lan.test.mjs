@@ -16,7 +16,7 @@ import { serverCommand } from '../tools/server-cmd.mjs';
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const DATA = process.env.NFSU2_DATA || path.join(os.homedir(), 'projects/nsfu2/Need for Speed - Underground 2');
 
-test('the server: /lan accepts its own pages and tools, refuses other sites; an address only back to its token', { skip: !fs.existsSync(path.join(DATA, 'SPEED2.EXE')) && 'no game folder' }, async () => {
+test('the server: /lan accepts its own pages and tools, refuses other sites; an address only back to its token', { skip: !fs.existsSync(path.join(DATA, 'SPEED.EXE')) && 'no game folder' }, async () => {
   const hport = +(process.env.NFSU2_TEST_PORT || 8528);
   const st = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'lantest-'));
   const srv = spawn(...serverCommand(['--data', DATA, '--http-port', String(hport), '--state', st]), { stdio: ['ignore', 'pipe', 'pipe'] });

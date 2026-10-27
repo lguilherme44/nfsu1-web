@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const WASI = fs.readdirSync(path.join(REPO, 'deps')).filter(d => d.startsWith('wasi-sdk-')).map(d => path.join(REPO, 'deps', d)).pop();
+const WASI = (fs.existsSync(path.join(REPO, 'deps')) ? fs.readdirSync(path.join(REPO, 'deps')) : []).filter(d => d.startsWith('wasi-sdk-')).map(d => path.join(REPO, 'deps', d)).pop();
 const CC = WASI && path.join(WASI, 'bin/clang');
 const OUT = path.join(REPO, 'out/web/test'); fs.mkdirSync(OUT, { recursive: true });
 // web/build.sh's target, features and defines

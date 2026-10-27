@@ -51,7 +51,7 @@ const P1 = +(process.env.NFSU2_TEST_PORT1 || 8527), P2 = +(process.env.NFSU2_TES
 const TMP = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'nfsu2-deploy-test-'));
 const CERTS = makeTestCerts(path.join(TMP, 'certs'));
 const WASM = path.join(REPO, 'out/web/nfsu2.wasm');
-const SKIP = !fs.existsSync(path.join(DATA, 'SPEED2.EXE')) ? 'no game folder (NFSU2_DATA)'
+const SKIP = !fs.existsSync(path.join(DATA, 'SPEED.EXE')) ? 'no game folder (NFSU2_DATA)'
   : !fs.existsSync(WASM) ? 'no out/web/nfsu2.wasm (web/build.sh)' : !fs.existsSync(path.join(REPO, 'web/dist/main.js')) ? 'no web/dist (node build.mjs)' : false;
 // this machine's LAN address: a peer the server does not trust
 const LAN_IP = Object.values(os.networkInterfaces()).flat().find(a => a && a.family === 'IPv4' && !a.internal)?.address ?? null;
@@ -176,11 +176,11 @@ function crawlRequests(mode) {
   add('HEAD game.wasm', req('HEAD', '/game.wasm'));
   add('manifest gz', req('GET', '/data-manifest', { headers: { 'Accept-Encoding': 'gzip' } }), { gz: true });
   add('manifest', req('GET', '/data-manifest')); add('manifest refresh', req('GET', '/data-manifest?refresh'));
-  add('data range', req('GET', '/data/SPEED2.EXE', { headers: { Range: 'bytes=0-4095' } }), { binary: true });
-  add('data blocks', req('GET', '/data-blocks/SPEED2.EXE?b=0&n=2', { headers: { 'Accept-Encoding': 'gzip, br' } }), { binary: true, br: true, gz: true });
-  add('data blocks bad', req('GET', '/data-blocks/SPEED2.EXE?b=0&n=99'));
-  add('data blocks past', req('GET', '/data-blocks/SPEED2.EXE?b=999999&n=1'));
-  add('data 416', req('GET', '/data/SPEED2.EXE', { headers: { Range: 'bytes=999999999999-' } }));
+  add('data range', req('GET', '/data/SPEED.EXE', { headers: { Range: 'bytes=0-4095' } }), { binary: true });
+  add('data blocks', req('GET', '/data-blocks/SPEED.EXE?b=0&n=2', { headers: { 'Accept-Encoding': 'gzip, br' } }), { binary: true, br: true, gz: true });
+  add('data blocks bad', req('GET', '/data-blocks/SPEED.EXE?b=0&n=99'));
+  add('data blocks past', req('GET', '/data-blocks/SPEED.EXE?b=999999&n=1'));
+  add('data 416', req('GET', '/data/SPEED.EXE', { headers: { Range: 'bytes=999999999999-' } }));
   add('data missing', req('GET', '/data/no/such/file.bin')); add('data dir', req('GET', '/data/')); add('data dir2', req('GET', '/data/FRONTEND'));
   // gone: what the page used to be told about the server, and the built-in certificate authority
   add('server-info', req('GET', '/server-info')); add('robots', req('GET', '/robots.txt'));
@@ -215,7 +215,7 @@ async function crawl(label, target, { viaProxy = false } = {}) {
     results.push({ ...r, res });
     if (r.name === 'data range') etag = res.headers.etag;
   }
-  if (etag) results.push({ name: 'data 304', res: await rawRequest({ ...target, data: req('GET', '/data/SPEED2.EXE', { headers: { 'If-None-Match': etag } }) }) });
+  if (etag) results.push({ name: 'data 304', res: await rawRequest({ ...target, data: req('GET', '/data/SPEED.EXE', { headers: { 'If-None-Match': etag } }) }) });
   const problems = [];
   for (const { name, res, binary, br, gz } of results) {
     if (!res.status) { problems.push(`${label} ${name}: no HTTP answer (${JSON.stringify(res.head.slice(0, 80))})`); continue; }
@@ -331,7 +331,7 @@ test('path traversal and file safety', { skip: SKIP, timeout: 60_000 }, async ()
   const data = fs.mkdtempSync(path.join(TMP, 'data-'));
   const outside = fs.mkdtempSync(path.join(TMP, 'outside-'));
   fs.writeFileSync(path.join(outside, 'secret.txt'), 'SECRET-OUTSIDE');
-  fs.writeFileSync(path.join(data, 'SPEED2.EXE'), 'MZ fake');
+  fs.writeFileSync(path.join(data, 'SPEED.EXE'), 'MZ fake');
   fs.mkdirSync(path.join(data, 'GLOBAL'));
   fs.writeFileSync(path.join(data, 'GLOBAL', 'Game.txt'), 'inside');
   fs.writeFileSync(path.join(data, '.hidden'), 'SECRET-DOT');
@@ -351,7 +351,7 @@ test('path traversal and file safety', { skip: SKIP, timeout: 60_000 }, async ()
   try {
     const attacks = [
       '/data/../build.mjs', '/data/%2e%2e/%2e%2e/etc/passwd', '/data/..%2f..%2f..%2fetc%2fpasswd', '/data/%252e%252e/%252e%252e/etc/passwd',
-      '/data/....//....//etc/passwd', '/data/..%5c..%5cetc%5cpasswd', '/data/..\\..\\etc\\passwd', '/data/SPEED2.EXE%00.txt',
+      '/data/....//....//etc/passwd', '/data/..%5c..%5cetc%5cpasswd', '/data/..\\..\\etc\\passwd', '/data/SPEED.EXE%00.txt',
       '/data/.%2e/.%2e/etc/passwd', '/data/%2e%2e%2f%2e%2e%2fweb/build.mjs', '/%2e%2e/%2e%2e/etc/passwd', '/..%2f..%2fout/web/server/etag.key',
       '/../web/build.mjs', '/web/build.mjs', '/ca.key', '/server.key', '/etag.key', '/.git/config', '/data/.hidden', '/data/%2ehidden',
       '/data/link-out.txt', '/data/dir-out/secret.txt', '/data/etc/passwd', '/data/etc/hosts', '/data/GLOBAL/../../outside/secret.txt',
@@ -376,7 +376,7 @@ test('path traversal and file safety', { skip: SKIP, timeout: 60_000 }, async ()
     assert.equal(html.headers['content-type'], 'application/octet-stream', 'a file in the game folder is never served as a page');
     // the manifest lists neither the links, the dot files nor what is not the game's
     const m = JSON.parse((await get('/data-manifest')).body);
-    assert.deepEqual(m.files.map(f => f.p).sort(), ['GLOBAL', 'GLOBAL/Game.txt', 'GLOBAL/page.html', 'SPEED2.EXE']);
+    assert.deepEqual(m.files.map(f => f.p).sort(), ['GLOBAL', 'GLOBAL/Game.txt', 'GLOBAL/page.html', 'SPEED.EXE']);
     assert.ok(!('root' in m), 'no folder name');
     console.log(`traversal: ${attacks.length} attempts, statuses ${JSON.stringify(Object.entries(seen).reduce((o, [, v]) => ({ ...o, [v]: (o[v] ?? 0) + 1 }), {}))}`);
   } finally { await s.stop(); }
@@ -493,7 +493,7 @@ test('requests queued on one connection (pipelined) and never read: cut, no memo
     sock.on('error', () => {});
     sock.pause();
     let closed = false; sock.on('close', () => { closed = true; });
-    sock.write(req('GET', '/data/SPEED2.EXE').replace('Connection: close\r\n', '').repeat(5000));
+    sock.write(req('GET', '/data/SPEED.EXE').replace('Connection: close\r\n', '').repeat(5000));
     await sleep(3000);
     const r1 = rssMb(s.c.pid), f1 = openFiles(s.c.pid);
     sock.destroy();
@@ -638,9 +638,9 @@ test('with --trusted-proxies cloudflare, the long keep-alive is for the proxies 
 
 test('--dev gating and start-up refusals', { skip: SKIP, timeout: 60_000 }, async () => {
   const STUB = fs.mkdtempSync(path.join(TMP, 'stub-'));
-  fs.writeFileSync(path.join(STUB, 'SPEED2.EXE'), 'MZ'); fs.mkdirSync(path.join(STUB, 'GLOBAL'));
+  fs.writeFileSync(path.join(STUB, 'SPEED.EXE'), 'MZ'); fs.mkdirSync(path.join(STUB, 'GLOBAL'));
   fs.copyFileSync(CERTS.key, path.join(STUB, 'GLOBAL', 'k.pem'));
-  fs.writeFileSync(path.join(STUB, 'GLOBAL', 'SPEED2.EXE'), 'MZ');            // GLOBAL as a game folder of its own (inside --state)
+  fs.writeFileSync(path.join(STUB, 'GLOBAL', 'SPEED.EXE'), 'MZ');            // GLOBAL as a game folder of its own (inside --state)
   const refusals = [
     [['--http-port', String(P2), '--artifacts', path.join(TMP, 'a')], /needs --dev/],
     [['--port', String(P1), '--tls-cert', CERTS.cert], /go together/],
@@ -802,12 +802,12 @@ test('Cloudflare simulation: client address, cache headers, ranges, brotli, the 
     assert.match(s.out(), /\[http\] 198\.51\.100\.7 GET \/ 200/, 'the client address from CF-Connecting-IP (the edge replaced the one the client sent)');
     assert.ok(!s.out().includes('1.2.3.4'));
     // a byte range of a game file through the proxy
-    const file = fs.readFileSync(path.join(DATA, 'SPEED2.EXE'));
-    const rg = await rawRequest({ ...edge, data: req('GET', '/data/SPEED2.EXE', { host: 'nfsu2.test', headers: { Range: 'bytes=100-199' } }) });
+    const file = fs.readFileSync(path.join(DATA, 'SPEED.EXE'));
+    const rg = await rawRequest({ ...edge, data: req('GET', '/data/SPEED.EXE', { host: 'nfsu2.test', headers: { Range: 'bytes=100-199' } }) });
     assert.equal(rg.status, 206); assert.equal(rg.headers['content-range'], `bytes 100-199/${file.length}`);
     assert.ok(rg.body.equals(file.subarray(100, 200)));
     // a run of compressed blocks through the proxy, as the edge asks for it (gzip, br): the exact bytes
-    const run = await rawRequest({ ...edge, data: req('GET', '/data-blocks/SPEED2.EXE?b=1&n=2', { host: 'nfsu2.test', headers: { 'Accept-Encoding': 'gzip, br' } }) });
+    const run = await rawRequest({ ...edge, data: req('GET', '/data-blocks/SPEED.EXE?b=1&n=2', { host: 'nfsu2.test', headers: { 'Accept-Encoding': 'gzip, br' } }) });
     assert.equal(run.status, 200); assert.equal(run.headers['content-encoding'], 'br');
     assert.match(run.headers['cache-control'], /private, no-store, no-transform/);
     assert.ok(zlib.brotliDecompressSync(run.body).equals(file.subarray(1 << 20, 3 << 20)));

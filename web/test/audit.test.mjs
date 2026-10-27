@@ -37,7 +37,7 @@ const DATA = process.env.NFSU2_DATA || path.join(os.homedir(), 'projects/nsfu2/N
 const P1 = +(process.env.NFSU2_TEST_AUDIT_PORT1 || 8529), P2 = +(process.env.NFSU2_TEST_AUDIT_PORT2 || 8629);
 const TMP = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'nfsu2-audit-test-'));
 test.after(() => fs.rmSync(TMP, { recursive: true, force: true }));
-const SKIP = !fs.existsSync(path.join(DATA, 'SPEED2.EXE')) ? 'no game folder (NFSU2_DATA)'
+const SKIP = !fs.existsSync(path.join(DATA, 'SPEED.EXE')) ? 'no game folder (NFSU2_DATA)'
   : !fs.existsSync(path.join(REPO, 'out/web/nfsu2.wasm')) ? 'no out/web/nfsu2.wasm (web/build.sh)' : false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ssl = (...a) => execFileSync('openssl', a, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
@@ -137,7 +137,7 @@ test('F7 / PRIV-4: a page that rebinds its own name to this machine gets 421 eve
   try {
     const evil = `rebind.attacker.example:${P2}`;
     const got = {};
-    for (const p of ['/', '/players', '/data-manifest', '/data/SPEED2.EXE', '/game.json'])
+    for (const p of ['/', '/players', '/data-manifest', '/data/SPEED.EXE', '/game.json'])
       got[p] = (await request(P2, { p, host: evil })).status;
     const up = { Upgrade: 'websocket', Connection: 'Upgrade', 'Sec-WebSocket-Version': '13', 'Sec-WebSocket-Key': crypto.randomBytes(16).toString('base64') };
     got['/lan'] = (await request(P2, { p: '/lan', host: evil, headers: { ...up, Origin: `http://${evil}` } })).status;
@@ -190,7 +190,7 @@ test('PRIV-1: of the game folder only the game is listed and served (installer l
     assert.deepEqual(top.filter(t => !allowed.has(t.toLowerCase())), [], 'nothing but the game\'s own entries');
     for (const p of ['unins000.dat', 'unins000.exe', 'SAVE', 'scripts/NFSUnderground2.WidescreenFix.ini', 'dinput8.dll', 'SDATA.Backup/sdat.viv', '_How To Play!!.txt'])
       if (fs.existsSync(path.join(DATA, p))) assert.equal((await request(P2, { p: '/data/' + p.split('/').map(encodeURIComponent).join('/') })).status, 404, p);
-    assert.equal((await request(P2, { p: '/data/SPEED2.EXE', headers: { Range: 'bytes=0-1' } })).status, 206);
+    assert.equal((await request(P2, { p: '/data/SPEED.EXE', headers: { Range: 'bytes=0-1' } })).status, 206);
     assert.equal((await request(P2, { p: '/data/GLOBAL/GLOBALB.LZC', headers: { Range: 'bytes=0-1' } })).status, fs.existsSync(path.join(DATA, 'GLOBAL/GLOBALB.LZC')) ? 206 : 404);
   } finally { await s.stop(); }
 });

@@ -22,7 +22,7 @@ test.after(() => fs.rmSync(TMP, { recursive: true, force: true }));
 
 const DATA = path.join(TMP, 'game'), WASM = path.join(TMP, 'game.wasm');
 fs.mkdirSync(DATA, { recursive: true });
-fs.writeFileSync(path.join(DATA, 'SPEED2.EXE'), 'MZ');
+fs.writeFileSync(path.join(DATA, 'SPEED.EXE'), 'MZ');
 const INFO = { pages: 16384, maxPages: 65536, guestEnd: 671088640, rev: 'abc1234', size: 0, opt: 'O2' };
 /** a build: a module (bytes that compress, as code does) and its game.json */
 function build(seed) {

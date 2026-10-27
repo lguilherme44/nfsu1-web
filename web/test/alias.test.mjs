@@ -13,7 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const hasWasi = fs.readdirSync(path.join(REPO, 'deps')).some(d => d.startsWith('wasi-sdk-'));
+const hasWasi = (fs.existsSync(path.join(REPO, 'deps')) ? fs.readdirSync(path.join(REPO, 'deps')) : []).some(d => d.startsWith('wasi-sdk-'));
 const sh = (script, env = {}) => spawnSync('bash', [path.join(REPO, script)], { cwd: REPO, encoding: 'utf8', env: { ...process.env, ...env } });
 
 test('aliasguard: the guest access macros keep their may_alias types', { skip: !hasWasi && 'no wasi-sdk in deps/' }, () => {

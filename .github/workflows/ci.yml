@@ -24,6 +24,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: web/server-rs -> ../../out/web/server-rs/target
+      # the C tests on wasm (alias, memcmp, input, LAN) build with the same wasi-sdk as web/build.sh
+      - name: wasi-sdk
+        run: |
+          mkdir -p deps
+          curl -fsSL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.tar.gz | tar -xz -C deps
+          ls deps
       - name: npm ci
         working-directory: web
         run: npm ci --no-audit --no-fund

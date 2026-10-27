@@ -22,7 +22,7 @@ import { serverCommand } from '../tools/server-cmd.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA = process.env.NFSU2_DATA || path.join(os.homedir(), 'projects/nsfu2/Need for Speed - Underground 2');
 const P1 = +(process.env.NFSU2_TEST_PLAYERS_PORT1 || 8530), P2 = +(process.env.NFSU2_TEST_PLAYERS_PORT2 || 8630);
-const SKIP = !fs.existsSync(path.join(DATA, 'SPEED2.EXE')) && 'no game folder (NFSU2_DATA)';
+const SKIP = !fs.existsSync(path.join(DATA, 'SPEED.EXE')) && 'no game folder (NFSU2_DATA)';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function server(port, extra = []) {
