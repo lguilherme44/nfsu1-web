@@ -172,12 +172,16 @@ test('/data-blocks/: a client holding all its compressors gets the rest as they 
 });
 
 test('/data-blocks/: past the 128 compressors of all clients, the next client gets its runs as they are until one is given back', { timeout: 60_000 }, async () => {
+  // a run that compresses little (7 random bits a byte: about 7 MB of 8), so its answer does not fit in the socket
+  // buffers of a client that stops reading and its compressor stays held (Linux's buffers take a 2 MB answer whole)
+  const held8 = path.join(DATA, 'TRACKS/HELD.BUN');
+  if (!fs.existsSync(held8)) { const b = bytes(8 * M, 'held', false); for (let i = 0; i < b.length; i++) b[i] &= 0x7f; fs.writeFileSync(held8, b); }
   const s = await server();
   const held = [];
   try {
     // a client is an X-Forwarded-For address (this machine is a trusted proxy); its compressed runs are not read
     const open = c => new Promise((res, rej) => {
-      const q = http.request({ host: '127.0.0.1', port: PORT, path: '/data-blocks/TRACKS/L4RA.BUN?b=0&n=8',
+      const q = http.request({ host: '127.0.0.1', port: PORT, path: '/data-blocks/TRACKS/HELD.BUN?b=0&n=8',
         headers: { host: `localhost:${PORT}`, 'accept-encoding': 'zstd, br, gzip', 'x-forwarded-for': `192.0.2.${c}` } }, r => {
         r.pause(); held.push(r); res(r.headers['content-encoding'] ?? 'none');
       });
